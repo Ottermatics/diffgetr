@@ -72,6 +72,21 @@ item_diff = diff['items'][0]['properties']
 print(diff.location)  # Shows path like 'root.items[0].properties'
 ```
 
+#### Path Pattern Matching
+
+```python
+# Find all diffs matching a wildcard pattern
+for df in diff.path_diffs('root.models.*.windows.-1.model.calculations'):
+    print('#'*80)
+    print(df.path)
+    print(df.diff_sidebyside())
+```
+
+This allows you to:
+- Use `*` wildcards to match any key name
+- Use `-1` to reference the last item in arrays
+- Iterate through all matching paths in the structure
+
 ### Command Line
 
 ```bash

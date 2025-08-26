@@ -52,11 +52,69 @@ class diff_get:
             self.diff_summary()
             raise KeyError(f"{self.location} | key missing: {key}")
 
+    @property
+    def path(self):
+        return '.'.join(self.loc)
+
     def keys(self):
         s0k = set(self.s0)
         s1k = set(self.s1)
         sa = set.intersection(s0k, s1k)
         return sa
+    
+    def dict_keys(self)->set:
+        return set(( k for k in self.keys() \
+                if isinstance(self.s0[k],dict) \
+                and isinstance(self.s1[k],dict)
+                ))
+
+    def path_diffs(self,syskey:str):
+        """take sys key like  root.p1.p2.pk[0].*.po[*].val and generate diffs through each matching key. If there is a key prefix'd with path, such as root.p1.p2 be sure to strip that so you can navigate the data.
+        """
+        if '.' not in syskey and '[' not in syskey:
+            #you're here
+            #print(f'returning {self.loc}')
+            if syskey in self.dict_keys():
+                yield self[syskey]
+            else:
+                yield self
+        else:
+            #recursive
+            pre_path = '.'.join(self.loc)
+            
+            find = syskey
+            if pre_path in syskey:
+                #print(f'replacing: {pre_path} in {syskey}')
+                find = syskey.replace(pre_path,"")
+            
+            pths = find.split('.')
+            for i,key_seg in enumerate(pths):
+                nx = pths[i+1:]
+                nxt = '.'.join(nx)
+                if not key_seg or key_seg == '.':
+                    continue
+                elif nx:
+                    #print(f'getting {key_seg} -> {nxt}')
+
+                    if '*' == key_seg:
+                        for ky in self.dict_keys():
+                            for val in self[ky].path_diffs(nxt):
+                                yield val
+
+                    elif '[*]' in key_seg:
+                        array1 = self.s0[key_seg]
+                        array2 = self.s1[key_seg]
+                        for j in range(min(len(array1),len(array2))):
+                            v1 = array1[j]
+                            v2 = array2[j]
+                            for val in diff_getr(v1,v2).path_diffs(nxt):
+                                yield val
+
+                    elif key_seg in self.dict_keys():
+                        for val in self[key_seg].path_diffs(nxt):
+                            yield val
+                        
+
 
     def __iter__(self):
         return self.keys()
@@ -108,6 +166,12 @@ class diff_get:
 
         pprint(d0, indent=2)
         pprint(d1, indent=2)
+
+    def print_below(self):
+        print(f'## BASE')
+        pprint(self.s0, indent=2)
+        print(f'\n## TEST')
+        pprint(self.s1, indent=2)        
 
     @property
     def diff_obj(self) -> deepdiff.DeepDiff:
