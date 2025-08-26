@@ -7,14 +7,25 @@ import argparse
 from pprint import pprint
 
 
-class diff_get:
+class Diffr:
 
     def __init__(
         self, s0, s1, loc=None, path=None, deep_diff_kw=None, ignore_added=False
     ):
 
-        assert type(s0) is type(s1), f"bad types!"
-        if isinstance(s0, (tuple, list)) and isinstance(s1, (tuple, list)):
+        #TODO: fail here for type differences
+        st0 = type(s0)
+        st1 = type(s1)
+        if st0 != st1:
+            preview_0 = str(s0)[:100]
+            preview_1 = str(s1)[:100]            
+            raise Exception(f'{loc}.{path}| types different: {st0} vs {st1} |0: {preview_0} | 1:{preview_1}')
+        elif st0 in (str,int,float):
+            preview_0 = str(s0)[:100]
+            preview_1 = str(s1)[:100]            
+            if s0 != s1:
+                raise Exception(f'{loc}.{path}| values different: {preview_0} vs {preview_1}')
+        elif isinstance(s0, (tuple, list)) and isinstance(s1, (tuple, list)):
             print(f"converting lists -> dict")
             s0 = {i: v for i, v in enumerate(s0)}
             s1 = {i: v for i, v in enumerate(s1)}
@@ -39,7 +50,7 @@ class diff_get:
 
     def __getitem__(self, key):
         if key in self.s0 and key in self.s1:
-            return diff_get(
+            return Diffr(
                 self.s0[key],
                 self.s1[key],
                 path=key,
@@ -68,7 +79,7 @@ class diff_get:
                 and isinstance(self.s1[k],dict)
                 ))
 
-    def path_diffs(self,syskey:str):
+    def path_diffs(self,syskey:str) -> "Diffr":
         """take sys key like  root.p1.p2.pk[0].*.po[*].val and generate diffs through each matching key. If there is a key prefix'd with path, such as root.p1.p2 be sure to strip that so you can navigate the data.
         """
         if '.' not in syskey and '[' not in syskey:
@@ -107,7 +118,7 @@ class diff_get:
                         for j in range(min(len(array1),len(array2))):
                             v1 = array1[j]
                             v2 = array2[j]
-                            for val in diff_getr(v1,v2).path_diffs(nxt):
+                            for val in Diffrr(v1,v2).path_diffs(nxt):
                                 yield val
 
                     elif key_seg in self.dict_keys():
@@ -327,14 +338,14 @@ class diff_get:
                 )
                 if pct is not None and abs(pct) > threshold:
                     if group_print is False:
-                        print(f"\nGROUP: {p}")
+                        print(f"\nGROUP: {self.path}.{p}")
                         group_print = True
                     print(
                         f" >{key:<50} | {v0s:^30} | {v1s:^30} | {diff:>14.4f} |{pct_diff:>10}"
                     )
                 elif pct is None and v0 != v1:
                     if group_print is False:
-                        print(f"\nGROUP: {p}")
+                        print(f"\nGROUP: {self.path}.{p}")
                         group_print = True
                     print(
                         f" >{key:<50} | {v0s:^30} | {v1s:^30} | {'-':^14} | {'-':^10}"
@@ -417,7 +428,7 @@ def main():
     with open(args.file2, "r", encoding="utf-8") as f:
         s1 = json.load(f)
 
-    DIFF = diff_get(s0, s1)
+    DIFF = Diffr(s0, s1)
     keys = args.path.split(".")
     try:
         for key in keys:
@@ -427,7 +438,7 @@ def main():
                 DIFF = DIFF[base]
                 loc = DIFF.loc.copy()
                 loc.append(f"[{idx}]")
-                DIFF = diff_get(DIFF.s0[idx], DIFF.s1[idx], loc=loc)
+                DIFF = Diffr(DIFF.s0[idx], DIFF.s1[idx], loc=loc)
                 continue
             else:
                 DIFF = DIFF[key]
