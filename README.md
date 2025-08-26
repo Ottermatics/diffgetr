@@ -83,9 +83,7 @@ for df in diff.path_diffs('root.models.*.windows.-1.model.calculations'):
 ```
 
 This allows you to:
-- Use `*` wildcards to match any key name
-- Use `-1` to reference the last item in arrays
-- Iterate through all matching paths in the structure
+- Use `*` wildcards to match any key name, and easily check parts of complex json package
 
 ### Command Line
 
