@@ -14,7 +14,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=6.0.0",
     "black>=22.0.0",
     "build>=0.8.0",
     "toml>=0.10.0",
@@ -25,7 +24,7 @@ dev = [
 Homepage = "https://github.com/yourusername/diffgetr"
 
 [tool.setuptools]
-packages = ["diffgetr"]
+packages = ["diffgetr", "diffgetr.tests"]
 
 [tool.setuptools.package-data]
 diffgetr = ["*.py"]

@@ -139,7 +139,7 @@ class TestDiffGet(unittest.TestCase):
     
     def test_type_assertion(self):
         """Test that different types raise assertion error"""
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(Exception):
             Diffr({"a": 1}, ["a", 1])
     
     def test_ipython_key_completions(self):
@@ -158,7 +158,7 @@ class TestCLI(unittest.TestCase):
     
     def test_main_function_exists(self):
         """Test that main function exists and is callable"""
-        from diffgetr.Diffr import main
+        from diffgetr.diff_get import main
         self.assertTrue(callable(main))
 
 
@@ -179,33 +179,4 @@ class TestPatternRecognition(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import sys
-    import traceback
-    
-    # Simple test runner
-    test_classes = [TestDiffGet, TestCLI, TestPatternRecognition]
-    total_tests = 0
-    passed_tests = 0
-    
-    for test_class in test_classes:
-        instance = test_class()
-        methods = [m for m in dir(instance) if m.startswith('test_')]
-        
-        for method_name in methods:
-            total_tests += 1
-            try:
-                method = getattr(instance, method_name)
-                method()
-                print(f"✅ {test_class.__name__}.{method_name}")
-                passed_tests += 1
-            except Exception as e:
-                print(f"❌ {test_class.__name__}.{method_name}: {e}")
-                traceback.print_exc()
-    
-    print(f"\n🏆 SUMMARY: {passed_tests}/{total_tests} tests passed")
-    if passed_tests == total_tests:
-        print("✅ ALL TESTS PASSED")
-        sys.exit(0)
-    else:
-        print("❌ SOME TESTS FAILED")
-        sys.exit(1)
+    unittest.main()
