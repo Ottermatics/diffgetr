@@ -12,6 +12,14 @@ class Diffr:
     def __init__(
         self, s0, s1, loc=None, path=None, deep_diff_kw=None, ignore_added=False
     ):
+        if deep_diff_kw is None:
+            self.deep_diff_kw = dict(
+                ignore_numeric_type_changes=True, significant_digits=3
+            )
+        else:
+            self.deep_diff_kw = deep_diff_kw
+
+        threshold = 1.0 / (10 ** self.deep_diff_kw.get("significant_digits", 3))
 
         #TODO: fail here for type differences
         st0 = type(s0)
@@ -20,11 +28,41 @@ class Diffr:
             preview_0 = str(s0)[:100]
             preview_1 = str(s1)[:100]            
             raise Exception(f'{loc}.{path}| types different: {st0} vs {st1} |0: {preview_0} | 1:{preview_1}')
-        elif st0 in (str,int,float):
+        
+        elif st0 in (str):
             preview_0 = str(s0)[:100]
-            preview_1 = str(s1)[:100]            
+            preview_1 = str(s1)[:100]
+            pct = None
+            v0_num = None
+            v1_num = None
+            # Try to convert to float if possible
+            try:
+                v0_num = float(v0)
+            except (ValueError, TypeError):
+                pass
+            try:
+                v1_num = float(v1)
+            except (ValueError, TypeError):
+                pass
+            if v0_num is not None and v1_num is not None:
+                diff = v1_num - v0_num
+                pct = abs(diff / v0_num)
+                pct_diff = f"{pct:10.3%}"
+                if abs(pct) > threshold:
+                    raise Exception(f'{loc}.{path}| values different: {s0} vs {s1}')                       
+            elif s0 != s1:
+                raise Exception(f'{loc}.{path}| values different: {preview_0} vs {preview_1}')            
+            return
+        
+        elif st0 in (int,float):        
             if s0 != s1:
-                raise Exception(f'{loc}.{path}| values different: {preview_0} vs {preview_1}')
+                diff = s1 - s0
+                pct = abs(diff / max(s1,s0))
+                pct_diff = f"{pct:10.3%}"
+                if abs(pct) > threshold:
+                    raise Exception(f'{loc}.{path}| values different: {s0} vs {s1}| {pct_diff}')  
+            return
+        
         elif isinstance(s0, (tuple, list)) and isinstance(s1, (tuple, list)):
             print(f"converting lists -> dict")
             s0 = {i: v for i, v in enumerate(s0)}
@@ -32,12 +70,6 @@ class Diffr:
         self.s0 = s0
         self.s1 = s1
         self.ignore_added = ignore_added
-        if deep_diff_kw is None:
-            self.deep_diff_kw = dict(
-                ignore_numeric_type_changes=True, significant_digits=3
-            )
-        else:
-            self.deep_diff_kw = deep_diff_kw
 
         if loc is None:
             self.loc = []
@@ -123,8 +155,7 @@ class Diffr:
 
                     elif key_seg in self.dict_keys():
                         for val in self[key_seg].path_diffs(nxt):
-                            yield val
-                        
+                            yield val     
 
 
     def __iter__(self):
