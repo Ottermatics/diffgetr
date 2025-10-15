@@ -21,14 +21,16 @@ class Diffr:
 
         threshold = 1.0 / (10 ** self.deep_diff_kw.get("significant_digits", 3))
 
-        #TODO: fail here for type differences
+        # TODO: fail here for type differences
         st0 = type(s0)
         st1 = type(s1)
         if st0 != st1:
             preview_0 = str(s0)[:100]
-            preview_1 = str(s1)[:100]            
-            raise Exception(f'{loc}.{path}| types different: {st0} vs {st1} |0: {preview_0} | 1:{preview_1}')
-        
+            preview_1 = str(s1)[:100]
+            raise Exception(
+                f"{loc}.{path}| types different: {st0} vs {st1} |0: {preview_0} | 1:{preview_1}"
+            )
+
         elif st0 in (str,):
             preview_0 = str(s0)[:100]
             preview_1 = str(s1)[:100]
@@ -49,20 +51,24 @@ class Diffr:
                 pct = abs(diff / v0_num)
                 pct_diff = f"{pct:10.3%}"
                 if abs(pct) > threshold:
-                    raise Exception(f'{loc}.{path}| values different: {s0} vs {s1}')                       
+                    raise Exception(f"{loc}.{path}| values different: {s0} vs {s1}")
             elif s0 != s1:
-                raise Exception(f'{loc}.{path}| values different: {preview_0} vs {preview_1}')            
+                raise Exception(
+                    f"{loc}.{path}| values different: {preview_0} vs {preview_1}"
+                )
             return
-        
-        elif st0 in (int,float):        
+
+        elif st0 in (int, float):
             if s0 != s1:
                 diff = s1 - s0
-                pct = abs(diff / max(s1,s0))
+                pct = abs(diff / max(s1, s0))
                 pct_diff = f"{pct:10.3%}"
                 if abs(pct) > threshold:
-                    raise Exception(f'{loc}.{path}| values different: {s0} vs {s1}| {pct_diff}')  
+                    raise Exception(
+                        f"{loc}.{path}| values different: {s0} vs {s1}| {pct_diff}"
+                    )
             return
-        
+
         elif isinstance(s0, (tuple, list)) and isinstance(s1, (tuple, list)):
             print(f"converting lists -> dict")
             s0 = {i: v for i, v in enumerate(s0)}
@@ -97,66 +103,67 @@ class Diffr:
 
     @property
     def path(self):
-        return '.'.join(self.loc)
+        return ".".join(self.loc)
 
     def keys(self):
         s0k = set(self.s0)
         s1k = set(self.s1)
         sa = set.intersection(s0k, s1k)
         return sa
-    
-    def dict_keys(self)->set:
-        return set(( k for k in self.keys() \
-                if isinstance(self.s0[k],dict) \
-                and isinstance(self.s1[k],dict)
-                ))
 
-    def path_diffs(self,syskey:str) -> "Diffr":
-        """take sys key like  root.p1.p2.pk[0].*.po[*].val and generate diffs through each matching key. If there is a key prefix'd with path, such as root.p1.p2 be sure to strip that so you can navigate the data.
-        """
-        if '.' not in syskey and '[' not in syskey:
-            #you're here
-            #print(f'returning {self.loc}')
+    def dict_keys(self) -> set:
+        return set(
+            (
+                k
+                for k in self.keys()
+                if isinstance(self.s0[k], dict) and isinstance(self.s1[k], dict)
+            )
+        )
+
+    def path_diffs(self, syskey: str) -> "Diffr":
+        """take sys key like  root.p1.p2.pk[0].*.po[*].val and generate diffs through each matching key. If there is a key prefix'd with path, such as root.p1.p2 be sure to strip that so you can navigate the data."""
+        if "." not in syskey and "[" not in syskey:
+            # you're here
+            # print(f'returning {self.loc}')
             if syskey in self.dict_keys():
                 yield self[syskey]
             else:
                 yield self
         else:
-            #recursive
-            pre_path = '.'.join(self.loc)
-            
+            # recursive
+            pre_path = ".".join(self.loc)
+
             find = syskey
             if pre_path in syskey:
-                #print(f'replacing: {pre_path} in {syskey}')
-                find = syskey.replace(pre_path,"")
-            
-            pths = find.split('.')
-            for i,key_seg in enumerate(pths):
-                nx = pths[i+1:]
-                nxt = '.'.join(nx)
-                if not key_seg or key_seg == '.':
+                # print(f'replacing: {pre_path} in {syskey}')
+                find = syskey.replace(pre_path, "")
+
+            pths = find.split(".")
+            for i, key_seg in enumerate(pths):
+                nx = pths[i + 1 :]
+                nxt = ".".join(nx)
+                if not key_seg or key_seg == ".":
                     continue
                 elif nx:
-                    #print(f'getting {key_seg} -> {nxt}')
+                    # print(f'getting {key_seg} -> {nxt}')
 
-                    if '*' == key_seg:
+                    if "*" == key_seg:
                         for ky in self.dict_keys():
                             for val in self[ky].path_diffs(nxt):
                                 yield val
 
-                    elif '[*]' in key_seg:
+                    elif "[*]" in key_seg:
                         array1 = self.s0[key_seg]
                         array2 = self.s1[key_seg]
-                        for j in range(min(len(array1),len(array2))):
+                        for j in range(min(len(array1), len(array2))):
                             v1 = array1[j]
                             v2 = array2[j]
-                            for val in Diffrr(v1,v2).path_diffs(nxt):
+                            for val in Diffrr(v1, v2).path_diffs(nxt):
                                 yield val
 
                     elif key_seg in self.dict_keys():
                         for val in self[key_seg].path_diffs(nxt):
-                            yield val     
-
+                            yield val
 
     def __iter__(self):
         return self.keys()
@@ -210,10 +217,10 @@ class Diffr:
         pprint(d1, indent=2)
 
     def print_below(self):
-        print(f'## BASE')
+        print(f"## BASE")
         pprint(self.s0, indent=2)
-        print(f'\n## TEST')
-        pprint(self.s1, indent=2)        
+        print(f"\n## TEST")
+        pprint(self.s1, indent=2)
 
     @property
     def diff_obj(self) -> deepdiff.DeepDiff:
@@ -232,7 +239,7 @@ class Diffr:
             bytes = False
         else:
             # Determine if file expects bytes or text
-            bytes = hasattr(file, 'mode') and 'b' in file.mode
+            bytes = hasattr(file, "mode") and "b" in file.mode
 
         title = f"{self.location} diffing data\n\n"
         file.write(title.encode("utf-8") if bytes else title)
@@ -479,6 +486,7 @@ def main():
     except KeyError:
         # diff_data already prints to stdout in __getitem__ on KeyError
         pass
+
 
 if __name__ == "__main__":
     main()
