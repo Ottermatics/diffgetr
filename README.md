@@ -28,10 +28,10 @@ pip install .
 #### Basic Usage
 
 ```python
-from diffgetr.diff_get import diff_get
+from diffgetr.diff_get import Diffr
 
 # Basic comparison
-diff = diff_get(obj1, obj2)
+diff = Diffr(obj1, obj2)
 print(diff)  # Prints a summary of differences
 
 # Navigate to specific parts
@@ -43,7 +43,7 @@ print(sub_diff)
 
 ```python
 # Custom DeepDiff parameters
-diff = diff_get(
+diff = Diffr(
     obj1, obj2,
     deep_diff_kw={'significant_digits': 5, 'ignore_string_case': True},
     ignore_added=True  # Focus only on changes and removals
@@ -60,7 +60,7 @@ raw_diff = diff.diff_obj   # Access underlying DeepDiff object
 
 ```python
 # Navigate through nested structures
-diff = diff_get(data1, data2)
+diff = Diffr(data1, data2)
 
 # Use tab completion to see available keys
 dir(diff)  # Shows common keys between both datasets
@@ -105,7 +105,7 @@ diffgetr file1.json file2.json path.to.key
 ### Constructor Parameters
 
 ```python
-diff_get(s0, s1, loc=None, path=None, deep_diff_kw=None, ignore_added=False)
+Diffr(s0, s1, loc=None, path=None, deep_diff_kw=None, ignore_added=False)
 ```
 
 **Parameters:**
@@ -169,13 +169,13 @@ When navigating to non-existent keys, the tool will:
 
 ```python
 import json
-from diffgetr.diff_get import diff_get
+from diffgetr.diff_get import Diffr
 
 with open('config_v1.json') as f1, open('config_v2.json') as f2:
     config1 = json.load(f1)
     config2 = json.load(f2)
 
-diff = diff_get(config1, config2, ignore_added=True)
+diff = Diffr(config1, config2, ignore_added=True)
 print(f"Changes found at: {diff.location}")
 diff.diff_summary(top=20)
 ```
@@ -184,7 +184,7 @@ diff.diff_summary(top=20)
 
 ```python
 # Compare two API responses with high precision
-diff = diff_get(
+diff = Diffr(
     response1, response2,
     deep_diff_kw={'significant_digits': 6, 'ignore_order': True}
 )
@@ -199,7 +199,7 @@ if user_diff:
 
 ```python
 # For detailed tabular comparison with percentage changes
-diff = diff_get(financial_data_old, financial_data_new)
+diff = Diffr(financial_data_old, financial_data_new)
 diff.diff_sidebyside()
 
 # Output example:
@@ -234,7 +234,7 @@ The test suite covers:
 
 ## Contributing
 
-This tool is part of the SMART_X project ecosystem. When contributing:
+This tool is part of the Ottermatics projects ecosystem. When contributing:
 
 1. Maintain backward compatibility with existing APIs
 2. Add tests for new pattern recognition features
