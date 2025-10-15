@@ -234,7 +234,7 @@ The test suite covers:
 
 ## Contributing
 
-This tool is part of the SMART_X project ecosystem. When contributing:
+This tool is part of the Ottermatics projects ecosystem. When contributing:
 
 1. Maintain backward compatibility with existing APIs
 2. Add tests for new pattern recognition features
