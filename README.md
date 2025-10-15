@@ -28,7 +28,7 @@ pip install .
 #### Basic Usage
 
 ```python
-from diffgetr.diff_get import diff_get
+from diffgetr.diff_get import Diffr
 
 # Basic comparison
 diff = Diffr(obj1, obj2)
@@ -169,7 +169,7 @@ When navigating to non-existent keys, the tool will:
 
 ```python
 import json
-from diffgetr.diff_get import diff_get
+from diffgetr.diff_get import Diffr
 
 with open('config_v1.json') as f1, open('config_v2.json') as f2:
     config1 = json.load(f1)
