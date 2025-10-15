@@ -29,7 +29,7 @@ class Diffr:
             preview_1 = str(s1)[:100]            
             raise Exception(f'{loc}.{path}| types different: {st0} vs {st1} |0: {preview_0} | 1:{preview_1}')
         
-        elif st0 in (str):
+        elif st0 in (str,):
             preview_0 = str(s0)[:100]
             preview_1 = str(s1)[:100]
             pct = None
