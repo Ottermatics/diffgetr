@@ -19,6 +19,7 @@ class Diffr:
         else:
             self.deep_diff_kw = deep_diff_kw
 
+        ### Compare Basic Type Inputs
         threshold = 1.0 / (10 ** self.deep_diff_kw.get("significant_digits", 3))
 
         # TODO: fail here for type differences
@@ -100,6 +101,15 @@ class Diffr:
             # self.diff_data(sys.stdout,bytes=False)
             self.diff_summary()
             raise KeyError(f"{self.location} | key missing: {key}")
+        
+    def is_same(self) -> bool:
+        df = self.diff_obj
+
+        if self.ignore_added:
+            df = {k:v for k,v in df.items() if 'added' not in k}
+        return not bool(df)
+
+
 
     @property
     def path(self):
