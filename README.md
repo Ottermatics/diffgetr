@@ -17,8 +17,9 @@ A Python library for comparing nested data structures with detailed diff reporti
 
 ## Installation
 
+Use [Pip](https://pypi.org/project/diffgetr/):
 ```bash
-pip install .
+pip install diffgetr
 ```
 
 ## Usage
