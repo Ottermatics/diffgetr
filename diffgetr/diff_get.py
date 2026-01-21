@@ -117,6 +117,7 @@ class Diffr:
     def is_same(self) -> bool:
         df = self.diff_obj
         return not bool(df)
+
     @property
     def path(self):
         return ".".join(self.loc)
