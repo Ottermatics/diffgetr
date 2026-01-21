@@ -6,6 +6,17 @@ import re
 import argparse
 from pprint import pprint
 
+def diff_greater(item_diff,tol):
+    nv = item_diff['new_value']
+    ov = item_diff['old_value']
+
+    try:
+        nv = float(nv)
+        ov = float(ov)
+    except:
+        return True
+
+    return abs(nv - ov) > tol
 
 class Diffr:
 
@@ -106,12 +117,9 @@ class Diffr:
     def is_same(self) -> bool:
         df = self.diff_obj
 
-        if self.ignore_added:
-            df = {k:v for k,v in df.items() if 'added' not in k}
+
         return not bool(df)
-
-
-
+    
     @property
     def path(self):
         return ".".join(self.loc)
@@ -262,7 +270,7 @@ class Diffr:
                 
             v0 = format_value(v0_raw) if in_s0 else "<MISSING>"
             v1 = format_value(v1_raw) if in_s1 else "<MISSING>"
-            match_str = "  ✓  " if match else "  ✗  "
+            match_str = "  Y  " if match else "  N  "
             print(f"{str(k):<{key_width}} | {match_str:^{match_width}} | {v0:^{val_width}} | {v1:^{val_width}}")
 
     def print_below(self):
@@ -278,6 +286,13 @@ class Diffr:
             for k in list(df):
                 if "added" in k:
                     df.pop(k)
+
+        if 'values_changed' in df:
+            vc = df.pop('values_changed')
+            vc = {k:v for k,v in vc.items() if diff_greater(v,self.threshold)}
+            if vc:
+                df['values_changed'] = vc
+                
         return df
 
     def diff_all(self, indent=2, file=None):
