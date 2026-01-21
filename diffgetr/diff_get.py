@@ -102,15 +102,13 @@ class Diffr:
             # self.diff_data(sys.stdout,bytes=False)
             self.diff_summary()
             raise KeyError(f"{self.location} | key missing: {key}")
-        
+
     def is_same(self) -> bool:
         df = self.diff_obj
 
         if self.ignore_added:
-            df = {k:v for k,v in df.items() if 'added' not in k}
+            df = {k: v for k, v in df.items() if "added" not in k}
         return not bool(df)
-
-
 
     @property
     def path(self):
@@ -208,6 +206,7 @@ class Diffr:
 
     def print_here(self, line_width=120, print_same=True):
         """Print a side-by-side comparison table of s0 and s1 keys."""
+
         def format_value(v):
             if isinstance(v, dict):
                 return "{...}"
@@ -232,7 +231,7 @@ class Diffr:
             return v0 == v1
 
         all_keys = set(self.s0.keys()) | set(self.s1.keys())
-        
+
         # Calculate column widths
         key_width = max(len(str(k)) for k in all_keys) if all_keys else 10
         match_width = 5  # For "  ✓  " or "  ✗  "
@@ -241,7 +240,7 @@ class Diffr:
 
         # Print header
         header = f"{'KEY':<{key_width}} | {'MATCH':^{match_width}} | {'D0':^{val_width}} | {'D1':^{val_width}}"
-        print(f'DATA FOR PATH: {self.path}')
+        print(f"DATA FOR PATH: {self.path}")
         print(header)
         print("-" * line_width)
 
@@ -251,19 +250,21 @@ class Diffr:
             in_s1 = k in self.s1
             v0_raw = self.s0[k] if in_s0 else None
             v1_raw = self.s1[k] if in_s1 else None
-            
+
             if in_s0 and in_s1:
                 match = values_match(v0_raw, v1_raw)
             else:
                 match = False
-            
+
             if not print_same and match:
                 continue
-                
+
             v0 = format_value(v0_raw) if in_s0 else "<MISSING>"
             v1 = format_value(v1_raw) if in_s1 else "<MISSING>"
             match_str = "  ✓  " if match else "  ✗  "
-            print(f"{str(k):<{key_width}} | {match_str:^{match_width}} | {v0:^{val_width}} | {v1:^{val_width}}")
+            print(
+                f"{str(k):<{key_width}} | {match_str:^{match_width}} | {v0:^{val_width}} | {v1:^{val_width}}"
+            )
 
     def print_below(self):
         print(f"## BASE")
