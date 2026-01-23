@@ -72,7 +72,7 @@ class TestDiffGet(unittest.TestCase):
         assert len(diff1.diff_obj) == 0
 
         # With high precision, should see difference
-        diff2 = Diffr(s0, s1, deep_diff_kw={"significant_digits": 6})
+        diff2 = Diffr(s0, s1, deep_diff_kw={"significant_digits": 9})
         assert len(diff2.diff_obj) > 0
 
     def test_keyerror_handling(self):

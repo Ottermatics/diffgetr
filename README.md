@@ -29,7 +29,7 @@ pip install diffgetr
 #### Basic Usage
 
 ```python
-from diffgetr.diff_get import Diffr
+from diffgetr import Diffr
 
 # Basic comparison
 diff = Diffr(obj1, obj2)

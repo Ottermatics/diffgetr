@@ -7,6 +7,19 @@ import argparse
 from pprint import pprint
 
 
+def diff_greater(item_diff, tol):
+    nv = item_diff["new_value"]
+    ov = item_diff["old_value"]
+
+    try:
+        nv = float(nv)
+        ov = float(ov)
+    except:
+        return True
+
+    return abs(nv - ov) > tol
+
+
 class Diffr:
 
     def __init__(
@@ -19,7 +32,9 @@ class Diffr:
         else:
             self.deep_diff_kw = deep_diff_kw
 
+        ### Compare Basic Type Inputs
         threshold = 1.0 / (10 ** self.deep_diff_kw.get("significant_digits", 3))
+        self.threshold = threshold
 
         # TODO: fail here for type differences
         st0 = type(s0)
@@ -100,6 +115,10 @@ class Diffr:
             # self.diff_data(sys.stdout,bytes=False)
             self.diff_summary()
             raise KeyError(f"{self.location} | key missing: {key}")
+
+    def is_same(self) -> bool:
+        df = self.diff_obj
+        return not bool(df)
 
     @property
     def path(self):
@@ -195,26 +214,68 @@ class Diffr:
         buff = fil.getvalue().decode("utf-8")
         return buff
 
-    def print_here(self):
-        d0 = {
-            k: (
-                "{...}"
-                if isinstance(v, dict)
-                else v if not isinstance(v, (list, tuple)) else "[...]"
-            )
-            for k, v in self.s0.items()
-        }
-        d1 = {
-            k: (
-                "{...}"
-                if isinstance(v, dict)
-                else v if not isinstance(v, (list, tuple)) else "[...]"
-            )
-            for k, v in self.s1.items()
-        }
+    def print_here(self, line_width=120, print_same=True):
+        """Print a side-by-side comparison table of s0 and s1 keys."""
 
-        pprint(d0, indent=2)
-        pprint(d1, indent=2)
+        def format_value(v):
+            if isinstance(v, dict):
+                return "{...}"
+            elif isinstance(v, (list, tuple)):
+                return "[...]"
+            else:
+                s = str(v)
+                return s[:20] + "..." if len(s) > 23 else s
+
+        def values_match(v0, v1):
+            if type(v0) != type(v1):
+                return False
+            if isinstance(v0, (int, float)) and isinstance(v1, (int, float)):
+                if v0 == v1:
+                    return True
+                if v0 == 0 and v1 == 0:
+                    return True
+                if v0 == 0 or v1 == 0:
+                    return False
+                pct = abs((v1 - v0) / max(abs(v0), abs(v1)))
+                return pct <= self.threshold
+            return v0 == v1
+
+        all_keys = set(self.s0.keys()) | set(self.s1.keys())
+
+        # Calculate column widths
+        key_width = max(len(str(k)) for k in all_keys) if all_keys else 10
+        match_width = 5  # For "  ✓  " or "  ✗  "
+        remaining = line_width - key_width - match_width - 10  # 10 for separators " | "
+        val_width = remaining // 2
+
+        # Print header
+        header = f"{'KEY':<{key_width}} | {'MATCH':^{match_width}} | {'D0':^{val_width}} | {'D1':^{val_width}}"
+        print(f"DATA FOR PATH: {self.path}")
+        print(header)
+        print("-" * line_width)
+
+        # Print rows
+        for k in sorted(all_keys, key=str):
+            in_s0 = k in self.s0
+            in_s1 = k in self.s1
+            v0_raw = self.s0[k] if in_s0 else None
+            v1_raw = self.s1[k] if in_s1 else None
+
+            if in_s0 and in_s1:
+                match = values_match(v0_raw, v1_raw)
+            else:
+                match = False
+
+            if not print_same and match:
+                continue
+
+            v0 = format_value(v0_raw) if in_s0 else "<MISSING>"
+            v1 = format_value(v1_raw) if in_s1 else "<MISSING>"
+
+            match_str = "  ✓  " if match else "  ✗  "
+            print(
+                f"{str(k):<{key_width}} | {match_str:^{match_width}} | {v0:^{val_width}} | {v1:^{val_width}}"
+            )
 
     def print_below(self):
         print(f"## BASE")
@@ -229,6 +290,13 @@ class Diffr:
             for k in list(df):
                 if "added" in k:
                     df.pop(k)
+
+        if "values_changed" in df:
+            vc = df.pop("values_changed")
+            vc = {k: v for k, v in vc.items() if diff_greater(v, self.threshold)}
+            if vc:
+                df["values_changed"] = vc
+
         return df
 
     def diff_all(self, indent=2, file=None):
@@ -345,11 +413,11 @@ class Diffr:
                 try:
                     v0_num = float(v0)
                 except (ValueError, TypeError):
-                    pass
+                    continue
                 try:
                     v1_num = float(v1)
                 except (ValueError, TypeError):
-                    pass
+                    continue
                 diff = "-"
                 if v0_num is not None and v1_num is not None:
                     try:
@@ -363,7 +431,7 @@ class Diffr:
                             pct = abs(diff / v0_num)
                         pct_diff = f"{pct:10.3%}"
                     except Exception:
-                        pass
+                        continue
                 v0s = (
                     json.dumps(v0, ensure_ascii=False)
                     if not isinstance(v0, str)
